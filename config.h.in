@@ -1,0 +1,6 @@
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+#define BPF_PROGRAM_INSTALL_PATH "@PREFIX@/@BPF_PROGRAM_INSTALL_PATH@"
+
+#endif /* __CONFIG_H__ */

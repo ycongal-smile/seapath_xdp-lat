@@ -1,0 +1,65 @@
+---
+- name: Deploy xdp-lat
+  hosts: xdp_nodes
+  become: true
+  vars:
+    repo_url: "https://github.com/ycongal-smile/seapath_xdp-lat.git"
+    repo_dest: "/opt/seapath_xdp-lat"
+    repo_version: "v0.1.0"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install build dependencies
+      apt:
+        name:
+          - git
+          - build-essential
+          - meson
+          - ninja-build
+          - pkg-config
+          - clang
+          - libbpf-dev
+          - libxdp-dev 
+          - linux-headers-generic
+          - gcc-multilib
+        state: present
+
+    - name: Clone repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dest }}"
+        version: "{{ repo_version }}"
+        force: yes
+      register: git_clone
+
+    - name: Configure build with Meson
+      command: meson setup builddir
+      args:
+        chdir: "{{ repo_dest }}"
+        # Only run setup if build.ninja doesn't exist
+        creates: "{{ repo_dest }}/builddir/build.ninja"
+      register: meson_setup
+
+    - name: Reconfigure Meson if source changed
+      # If git pulled new changes but meson setup was skipped (because builddir exists),
+      # we force a reconfigure to ensure build files are up to date.
+      command: meson setup --reconfigure builddir
+      args:
+        chdir: "{{ repo_dest }}"
+      when: git_clone.changed and (meson_setup.skipped is defined and meson_setup.skipped)
+
+    - name: Compile project
+      command: meson compile -C builddir
+      args:
+        chdir: "{{ repo_dest }}"
+      register: compile_output
+      changed_when: "'Linking target' in compile_output.stdout"
+
+    - name: Install binary
+      command: meson install -C builddir
+      args:
+        chdir: "{{ repo_dest }}"

@@ -3,9 +3,9 @@
   hosts: xdp_nodes
   become: true
   vars:
-    repo_url: "https://github.com/ycongal-smile/seapath_xdp-lat.git"
+    repo_url: "https://github.com/insatomcat/xdp.git"
     repo_dest: "/opt/seapath_xdp-lat"
-    repo_version: "v0.1.0"
+    repo_version: "xdp-lat"
 
   tasks:
     - name: Update apt cache
